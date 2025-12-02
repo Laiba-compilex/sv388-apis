@@ -1,7 +1,7 @@
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-
+const sendEmail = require('../utils/emailConfig');
 const authController = {
   register: async (req, res) => {
     try {
@@ -68,7 +68,6 @@ const authController = {
     try {
       const { email, password } = req.body;
       
-      // Check user
       const user = await User.findOne({ email });
       if (!user) {
         return res.status(401).json({
@@ -77,7 +76,6 @@ const authController = {
         });
       }
       
-      // Check password
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) {
         return res.status(401).json({
@@ -86,12 +84,10 @@ const authController = {
         });
       }
       
-      // Ensure JWT secret is available
       if (!process.env.JWT_SECRET) {
         return res.status(500).json({ success: false, error: 'JWT secret is not configured on the server' });
       }
 
-      // Generate token
       const token = jwt.sign(
         { id: user._id },
         process.env.JWT_SECRET,
@@ -173,7 +169,52 @@ resetPassword: async (req, res) => {
       });
     } 
   },
-  
+forgotPassword: async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: "User not found",
+      });
+    }
+
+    const resetToken = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    const resetUrl = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
+
+    await sendEmail({
+      to: user.email,
+      subject: "Reset Your Password",
+      html: `
+        <p>Hi ${user.name},</p>
+        <p>You requested to reset your password.</p>
+        <p>
+          Click <a href="${resetUrl}">here</a> to reset your password.
+        </p>
+        <p>If you did not request this, please ignore this email.</p>
+      `,
+    });
+
+    res.json({
+      success: true,
+      message: "Password reset link sent to your email",
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+},
+
 };
 
 
