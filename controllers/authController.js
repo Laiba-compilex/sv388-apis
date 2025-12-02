@@ -5,7 +5,6 @@ const jwt = require('jsonwebtoken');
 const authController = {
   register: async (req, res) => {
     try {
-        console.log("Register endpoint hit", req.body);
       const { name, email, password } = req.body;
       
       // Validation
@@ -118,7 +117,7 @@ const authController = {
   
   getMe: async (req, res) => {
     try {
-      const user = await User.findById(req.user.id).select('-password');
+      const user = await User.findById(req.query.id).select('-password');
       res.json({
         success: true,
         data: user
@@ -129,7 +128,55 @@ const authController = {
         error: error.message
       });
     }
-  }
+  },
+
+  updateUser: async (req, res) => {
+    try {
+      console.log("Update User Called", req.body);
+      const user = await User.findById(req.body.id);
+      const updatedUser = Object.assign(user, req.body);
+      await updatedUser.save();
+      res.json({
+        success: true,
+        data: updatedUser
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error.message
+      });
+    }
+},
+
+resetPassword: async (req, res) => {
+    try {
+      const { email, newPassword } = req.body;
+      const user = await User.findOne({ email });
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          error: 'User not found'
+        });
+      }
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(newPassword, salt);
+      user.password = hashedPassword;
+      await user.save();
+      res.json({
+        success: true,
+        message: 'Password reset successfully'
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error.message
+      });
+    } 
+  },
+  
 };
+
+
+
 
 module.exports = authController;

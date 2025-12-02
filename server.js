@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const connectDB = require('./config/Database');
+const connectDB = require('./config/database');
 const authRoutes = require('./routes/authRoutes');
 const app = express();
 
@@ -16,14 +16,21 @@ if (!process.env.MONGODB_URI) {
   process.exit(1);
 }
 if (!process.env.JWT_SECRET) {
-  console.error('❌ Missing required environment variable: JWT_SECRET');
-  console.error('Tip: add JWT_SECRET to your .env file (example: JWT_SECRET=your_secret_here)');
-  process.exit(1);
+  // In production this must be set — fail fast.
+  if (process.env.NODE_ENV === 'production') {
+    console.error('❌ Missing required environment variable: JWT_SECRET (production)');
+    process.exit(1);
+  }
+
+  // For development convenience, generate a temporary secret and log a warning.
+  const crypto = require('crypto');
+  process.env.JWT_SECRET = crypto.randomBytes(32).toString('hex');
+  console.warn('⚠️  JWT_SECRET not found — using a generated development-only secret. Add JWT_SECRET to your .env for persistent behavior.');
 }
 
 // Database connection
 connectDB();
-app.use('/api/users', authRoutes);
+app.use('/api/auth', authRoutes);
 // Routes
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to Node.js + MongoDB API' });
