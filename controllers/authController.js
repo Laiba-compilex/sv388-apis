@@ -173,7 +173,28 @@ resetPassword: async (req, res) => {
       });
     } 
   },
-  
+  forgotPassword: async (req, res) => {
+    try {
+      const { email } = req.body;
+      const user = await User.findOne({ email });
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          error: 'User not found'
+        });
+      }
+      // Here you would typically generate a reset token and send an email
+      res.json({
+        success: true,
+        message: 'Password reset link has been sent to your email (simulated)'
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error.message
+      });
+    }
+  }
 };
 
 
