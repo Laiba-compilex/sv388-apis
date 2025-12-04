@@ -3,6 +3,9 @@ const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/database');
 const authRoutes = require('./routes/authRoutes');
+const userRoutes = require('./routes/userRoutes');
+const { swaggerUi, specs } = require('./swagger');
+
 const app = express();
 
 // Middleware
@@ -30,8 +33,14 @@ if (!process.env.JWT_SECRET) {
 
 // Database connection
 connectDB();
-app.use('/api/auth', authRoutes);
+
+// Swagger documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+
 // Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+
 app.get('/', (req, res) => {
   res.json({ message: 'Welcome to Node.js + MongoDB API' });
 });
