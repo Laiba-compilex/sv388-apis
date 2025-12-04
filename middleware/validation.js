@@ -58,8 +58,8 @@ const registerValidation = [
     .optional()
     .isIn(['user', 'admin', 'moderator']).withMessage('Invalid role selected'),
   
-  body('terms')
-    .equals('true').withMessage('You must accept terms and conditions')
+  // body('terms')
+  //   .equals('true').withMessage('You must accept terms and conditions')
 ];
 
 // User Login Validation Rules
